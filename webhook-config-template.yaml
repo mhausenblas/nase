@@ -13,5 +13,5 @@ webhooks:
         apiVersions: ["v1"]
         resources: ["secrets"]
     clientConfig:
-        url: $API_GATEWAY_WEBHOOK_URL
-        caBundle: $CA_BUNDLE
+        url: API_GATEWAY_WEBHOOK_URL
+        caBundle: CA_BUNDLE
