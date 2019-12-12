@@ -12,18 +12,18 @@ Globals:
       AllowOrigin: "'*'"
 
 Resources:
-  WebhookFunc:
+  SecretsFunc:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: bin/
-      Handler: webhook
+      Handler: secrets
       Runtime: go1.x
       Tracing: Active
       Events:
         Mutate:
           Type: Api
           Properties:
-            Path: /webhook
+            Path: /secrets
             Method: POST
       Policies:
         - AWSLambdaExecute
@@ -31,7 +31,29 @@ Resources:
           Statement:
             - Effect: Allow
               Action:
-              - secretsmanager:*
+              - secretsmanager:CreateSecret
+              Resource:
+              - '*'
+  PodsFunc:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: bin/
+      Handler: pods
+      Runtime: go1.x
+      Tracing: Active
+      Events:
+        Mutate:
+          Type: Api
+          Properties:
+            Path: /pods
+            Method: POST
+      Policies:
+        - AWSLambdaExecute
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+              - secretsmanager:GetSecretValue
               Resource:
               - '*'
 Outputs:
