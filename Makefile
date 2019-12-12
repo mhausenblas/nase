@@ -8,10 +8,10 @@ PODS_WEBHOOK_ENDPOINT:=${APIGATEWAY_ENDPOINT}/pods
 build: buildsecrets buildpods
 
 buildsecrets:
-	GOOS=linux GOARCH=amd64 go build -v -ldflags '-d -s -w' -a -tags netgo -installsuffix netgo -o bin/secrets secrets/webhook
+	GOOS=linux GOARCH=amd64 go build -v -ldflags '-d -s -w' -a -tags netgo -installsuffix netgo -o bin/secrets ./secrets/webhook
 
 buildpods:
-	GOOS=linux GOARCH=amd64 go build -v -ldflags '-d -s -w' -a -tags netgo -installsuffix netgo -o bin/pods pods/webhook
+	GOOS=linux GOARCH=amd64 go build -v -ldflags '-d -s -w' -a -tags netgo -installsuffix netgo -o bin/pods ./pods/webhook
 
 up: 
 	sam package --template-file template.yaml --output-template-file current-stack.yaml --s3-bucket ${WEBHOOK_BUCKET}
