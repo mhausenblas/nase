@@ -10,7 +10,6 @@ import (
 
 	"github.com/appscode/jsonpatch"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
-	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -52,7 +51,6 @@ func responseAdmissionReview(review *admissionv1beta1.AdmissionReview) (events.A
 func genCodec() serializer.CodecFactory {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(schema.GroupVersion{Group: "", Version: "v1"}, &v1.Secret{})
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "apps", Version: "v1"}, &appsv1.Deployment{})
 	codecs := serializer.NewCodecFactory(scheme)
 	_ = runtime.ObjectDefaulter(scheme)
 	// fmt.Printf("DEBUG:: SCHEME\n %v\n", scheme)
@@ -116,8 +114,6 @@ func mutate(body string) (events.APIGatewayProxyResponse, error) {
 		if err != nil {
 			return serverError(fmt.Errorf("Unexpected encoding error: %v", err))
 		}
-	case *appsv1.Deployment:
-		fmt.Printf("DEBUG:: SECRET\n%v\n", secret)
 	default:
 		review.Response.Result = &metav1.Status{
 			Message: fmt.Sprintf("Unexpected type %T", review.Request.Object.Object),

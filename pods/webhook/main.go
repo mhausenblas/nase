@@ -11,7 +11,6 @@ import (
 	"github.com/appscode/jsonpatch"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -51,7 +50,6 @@ func responseAdmissionReview(review *admissionv1beta1.AdmissionReview) (events.A
 
 func genCodec() serializer.CodecFactory {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "", Version: "v1"}, &v1.Secret{})
 	scheme.AddKnownTypes(schema.GroupVersion{Group: "apps", Version: "v1"}, &appsv1.Deployment{})
 	codecs := serializer.NewCodecFactory(scheme)
 	_ = runtime.ObjectDefaulter(scheme)
@@ -59,7 +57,7 @@ func genCodec() serializer.CodecFactory {
 	return codecs
 }
 
-func createSecret(namespace, name, payload string) (string, error) {
+func retrieveSecret(namespace, name string) (string, error) {
 	svc := secretsmanager.New(session.New())
 	input := &secretsmanager.CreateSecretInput{
 		Description:  aws.String("A native secret managed by the NaSe Webhook"),
@@ -104,20 +102,9 @@ func mutate(body string) (events.APIGatewayProxyResponse, error) {
 	original := review.Request.Object.Raw
 	ns := review.Request.Namespace
 	var bs []byte
-	switch secret := review.Request.Object.Object.(type) {
-	case *v1.Secret:
-		fmt.Printf("DEBUG:: SECRET\n%v\n", secret)
-		secretRef, err := createSecret(ns, secret.Name, string(secret.Data["nase"]))
-		if err != nil {
-			return serverError(fmt.Errorf("Can't create secret in Secret Manager: %v", err))
-		}
-		secret.Data["nase"] = []byte(secretRef)
-		bs, err = json.Marshal(secret)
-		if err != nil {
-			return serverError(fmt.Errorf("Unexpected encoding error: %v", err))
-		}
+	switch deploy := review.Request.Object.Object.(type) {
 	case *appsv1.Deployment:
-		fmt.Printf("DEBUG:: SECRET\n%v\n", secret)
+		fmt.Printf("DEBUG:: DEPLOYMENT in namespace %v\n%v\n", ns, deploy)
 	default:
 		review.Response.Result = &metav1.Status{
 			Message: fmt.Sprintf("Unexpected type %T", review.Request.Object.Object),
@@ -140,12 +127,12 @@ func mutate(body string) (events.APIGatewayProxyResponse, error) {
 }
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	fmt.Printf("DEBUG:: native secrets webhook start\n")
+	fmt.Printf("DEBUG:: pods webhook start\n")
 	response, err := mutate(request.Body)
 	if err != nil {
 		return serverError(err)
 	}
-	fmt.Printf("DEBUG:: native secrets webhook done\n")
+	fmt.Printf("DEBUG:: pods webhook done\n")
 	return response, nil
 }
 
