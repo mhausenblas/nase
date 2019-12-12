@@ -15,10 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/secretsmanager"
 )
 
 func serverError(err error) (events.APIGatewayProxyResponse, error) {
@@ -58,17 +54,18 @@ func genCodec() serializer.CodecFactory {
 }
 
 func retrieveSecret(namespace, name string) (string, error) {
-	svc := secretsmanager.New(session.New())
-	input := &secretsmanager.CreateSecretInput{
-		Description:  aws.String("A native secret managed by the NaSe Webhook"),
-		Name:         aws.String(fmt.Sprintf("%v.%v", namespace, name)),
-		SecretString: aws.String(payload),
-	}
-	result, err := svc.CreateSecret(input)
-	if err != nil {
-		return "", err
-	}
-	return *result.ARN, nil
+	// svc := secretsmanager.New(session.New())
+	// input := &secretsmanager.CreateSecretInput{
+	// 	Description:  aws.String("A native secret managed by the NaSe Webhook"),
+	// 	Name:         aws.String(fmt.Sprintf("%v.%v", namespace, name)),
+	// 	SecretString: aws.String(payload),
+	// }
+	// result, err := svc.CreateSecret(input)
+	// if err != nil {
+	// 	return "", err
+	// }
+	// return *result.ARN, nil
+	return ":)", nil
 }
 
 func mutate(body string) (events.APIGatewayProxyResponse, error) {
