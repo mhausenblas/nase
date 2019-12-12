@@ -27,21 +27,12 @@ func serverError(err error) (events.APIGatewayProxyResponse, error) {
 	}, nil
 }
 
-func responseString(payload string) (events.APIGatewayProxyResponse, error) {
-	return events.APIGatewayProxyResponse{
-		StatusCode: http.StatusOK,
-		Headers: map[string]string{
-			"Access-Control-Allow-Origin": "*",
-		},
-		Body: payload,
-	}, nil
-}
-
 func responseAdmissionReview(review *admissionv1beta1.AdmissionReview) (events.APIGatewayProxyResponse, error) {
 	reviewjson, err := json.Marshal(review)
 	if err != nil {
 		return serverError(fmt.Errorf("Unexpected decoding error: %v", err))
 	}
+	fmt.Println(string(reviewjson))
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
 		Headers: map[string]string{
@@ -88,11 +79,11 @@ func mutate(body string) (events.APIGatewayProxyResponse, error) {
 	}
 	ops, err := jsonpatch.CreatePatch(original, bs)
 	if err != nil {
-		return serverError(fmt.Errorf("unexpected diff error: %v", err))
+		return serverError(fmt.Errorf("Unexpected diff error: %v", err))
 	}
 	review.Response.Patch, err = json.Marshal(ops)
 	if err != nil {
-		return serverError(fmt.Errorf("unexpected patch encoding error: %v", err))
+		return serverError(fmt.Errorf("Unexpected patch encoding error: %v", err))
 	}
 	typ := admissionv1beta1.PatchTypeJSONPatch
 	review.Response.PatchType = &typ
