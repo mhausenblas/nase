@@ -12,7 +12,18 @@ In order to build and deploy the service, clone this repo and make sure you've g
 
 Additionally, I recommend that you have [jq](https://stedolan.github.io/jq/download/) installed.
 
-To install the webhook, execute:
+First, prepare the S3 bucket for the Lambda function that provides the webhook (make sure that you pick different name for the `WEBHOOK_BUCKET` bucket env variable since buckets need to be globally unique):
+
+```sh
+export WEBHOOK_BUCKET=nase-webhook
+
+aws s3api create-bucket \
+          --bucket $WEBHOOK_BUCKET \
+          --create-bucket-configuration LocationConstraint=$(aws configure get region) \
+          --region $(aws configure get region)
+```
+
+Now, to install the webhook, execute:
 
 ```sh
 make deploy
