@@ -85,6 +85,6 @@ Notes:
 $ kubectl create secret generic somesecret --from-literal=nase=supersecret
 secret/somesecret created
 
-$ kubectl get secret/somesecret -o "jsonpath={.data['nase']}" | base64 -D
+$ kubectl get secret somesecret -o "jsonpath={.data['nase']}" | base64 -D
 arn:aws:secretsmanager:us-west-2:123456789012:secret:.nase-dzWHWN
 ```

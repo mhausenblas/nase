@@ -15,6 +15,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/secretsmanager"
 )
 
 func serverError(err error) (events.APIGatewayProxyResponse, error) {
@@ -53,17 +57,17 @@ func genCodec() serializer.CodecFactory {
 	return codecs
 }
 
-func retrieveSecret(secretARN string) (string, error) {
-	// svc := secretsmanager.New(session.New())
-	// input := &secretsmanager.GetSecretValueInput{
-	// 	SecretId:  aws.String(secretARN),
-	// }
-	// result, err := svc.GetSecretValue(input)
-	// if err != nil {
-	// 	return "", err
-	// }
-	// return *result.ARN, nil
-	return ":)", nil
+func retrieveSecret(ns, secretARN string) (string, error) {
+	fmt.Printf("DEBUG:: trying to retrieve secret with ARN %v\n", secretARN)
+	svc := secretsmanager.New(session.New())
+	input := &secretsmanager.GetSecretValueInput{
+		SecretId: aws.String(secretARN),
+	}
+	result, err := svc.GetSecretValue(input)
+	if err != nil {
+		return "", err
+	}
+	return *result.SecretString, nil
 }
 
 func mutate(body string) (events.APIGatewayProxyResponse, error) {
@@ -96,10 +100,23 @@ func mutate(body string) (events.APIGatewayProxyResponse, error) {
 	}
 	original := review.Request.Object.Raw
 	ns := review.Request.Namespace
-	var bs []byte
+	var bd []byte
 	switch deploy := review.Request.Object.Object.(type) {
 	case *appsv1.Deployment:
 		fmt.Printf("DEBUG:: DEPLOYMENT in namespace %v\n%v\n", ns, deploy)
+		// targetsec := deploy.Spec.Template.Spec.Volumes[0].Secret.SecretName
+		secarn, ok := deploy.Annotations["nase.mhausenblas.info/secret-arn"]
+		if ok {
+			plaintext, err := retrieveSecret(ns, secarn)
+			if err != nil {
+				return serverError(fmt.Errorf("Can't retrieve secret from Secret Manager: %v", err))
+			}
+			fmt.Printf("DEBUG:: PLAINTEXT %v\n", plaintext)
+		}
+		bd, err = json.Marshal(deploy)
+		if err != nil {
+			return serverError(fmt.Errorf("Unexpected encoding error: %v", err))
+		}
 	default:
 		review.Response.Result = &metav1.Status{
 			Message: fmt.Sprintf("Unexpected type %T", review.Request.Object.Object),
@@ -107,7 +124,7 @@ func mutate(body string) (events.APIGatewayProxyResponse, error) {
 		}
 		return responseAdmissionReview(review)
 	}
-	ops, err := jsonpatch.CreatePatch(original, bs)
+	ops, err := jsonpatch.CreatePatch(original, bd)
 	if err != nil {
 		return serverError(fmt.Errorf("Unexpected diff error: %v", err))
 	}
