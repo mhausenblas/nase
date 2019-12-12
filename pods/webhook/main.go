@@ -53,14 +53,12 @@ func genCodec() serializer.CodecFactory {
 	return codecs
 }
 
-func retrieveSecret(namespace, name string) (string, error) {
+func retrieveSecret(secretARN string) (string, error) {
 	// svc := secretsmanager.New(session.New())
-	// input := &secretsmanager.CreateSecretInput{
-	// 	Description:  aws.String("A native secret managed by the NaSe Webhook"),
-	// 	Name:         aws.String(fmt.Sprintf("%v.%v", namespace, name)),
-	// 	SecretString: aws.String(payload),
+	// input := &secretsmanager.GetSecretValueInput{
+	// 	SecretId:  aws.String(secretARN),
 	// }
-	// result, err := svc.CreateSecret(input)
+	// result, err := svc.GetSecretValue(input)
 	// if err != nil {
 	// 	return "", err
 	// }
