@@ -1,0 +1,17 @@
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: nase
+webhooks:
+  - name: nase
+    failurePolicy: Fail
+    rules:
+      - operations:
+        - "CREATE"
+        - "UPDATE"
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["secrets"]
+    clientConfig:
+        url: $API_GATEWAY_WEBHOOK_URL
+        caBundle: $CA_BUNDLE
